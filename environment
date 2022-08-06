@@ -1,0 +1,18 @@
+
+echo "Setting up environment for Wikimedia Cloud OpenStack."
+
+if [ -z "$OS_USERNAME" ]; then
+    echo "Please log in with your Wikimedia Developer Account."
+    read -rp 'Username: ' OS_USERNAME
+    export OS_USERNAME
+
+    read -srp 'Password: ' OS_PASSWORD
+    export OS_PASSWORD
+fi
+
+if [ -z "$OS_PASSWORD" ]; then
+    echo "Please provide the password for Wikimedia Developer Account '$OS_USERNAME'."
+
+    read -srp 'Password: ' OS_PASSWORD
+    export OS_PASSWORD
+fi
