@@ -33,3 +33,8 @@ variable "project" {
   type    = string
   default = "account-creation-assistance"
 }
+
+output "dns" {
+  value = "http://${aws_instance.oauth.public_dns}/"
+  description = "MediaWiki OAuth test instance:"
+}

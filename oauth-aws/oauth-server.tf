@@ -1,35 +1,3 @@
-data "aws_ami" "debian-bullseye" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["debian-11-amd64-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  owners = ["136693071363"] # Debian; https://wiki.debian.org/Cloud/AmazonEC2Image/Buster
-}
-
-data "aws_vpc" "main_vpc" {
-  filter {
-    name   = "tag:Name"
-    values = ["${var.project}-vpc"]
-  }
-}
-
-data "aws_subnet" "az1-public" {
-  filter {
-    name   = "tag:Name"
-    values = ["${var.project}-az1-public"]
-  }
-
-  vpc_id = data.aws_vpc.main_vpc.id
-}
-
 resource "aws_security_group" "web" {
   name        = "${var.project}-oauth-instance"
   description = "${var.project} OAuth instance SG"
@@ -90,23 +58,75 @@ resource "aws_instance" "oauth" {
   key_name               = var.key_pair_name
   vpc_security_group_ids = [aws_security_group.web.id]
 
+  instance_initiated_shutdown_behavior = "terminate"
+
   tags = {
-    "Name" = "${var.project}-oauth"
+    "Name"      = "${var.project}-oauth"
+    "publicdns" = "${var.linode_dns_name}.${var.linode_dns_zone}"
+  }
+
+  metadata_options {
+    http_endpoint          = "enabled"
+    instance_metadata_tags = "enabled"
+  }
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 20
+    tags = {
+      "Name" = "${var.project}-oauth-root"
+    }
   }
 
   user_data_replace_on_change = true
   user_data                   = <<EOF
-#!/bin/bash
+#!/bin/bash -e
 apt-get update
-apt-get install -q -y git ansible
+apt-get install -q -y git ansible jq
 mkdir -p /opt/provisioning
-git clone https://github.com/stwalkerster/acc-ansible-test.git /opt/provisioning/ansible
+git clone https://github.com/enwikipedia-acc/tf.git /opt/provisioning
 cd /opt/provisioning/ansible
-ls -l
+
+ln -s /opt/provisioning/ansible/provision-oauth.sh /usr/local/bin/acc-provision
+chmod a+rx /opt/provisioning/ansible/acc-provision.sh
+
+acc-provision
+
 EOF
 }
 
-output "dns" {
-  value = "http://${aws_instance.oauth.public_dns}/"
-  description = "MediaWiki OAuth test instance:"
+resource "aws_ebs_volume" "oauth-www" {
+  availability_zone = data.aws_subnet.az1-public.availability_zone
+  size              = 3
+  type              = "gp3"
+
+  tags = {
+    "Name" = "oauth-www"
+  }
+}
+
+resource "aws_ebs_volume" "oauth-db" {
+  availability_zone = data.aws_subnet.az1-public.availability_zone
+  size              = 2
+  type              = "gp3"
+
+  tags = {
+    "Name" = "oauth-db"
+  }
+}
+
+resource "aws_volume_attachment" "oauth-www" {
+  device_name = "/dev/sdb"
+  volume_id   = aws_ebs_volume.oauth-www.id
+  instance_id = aws_instance.oauth.id
+
+  stop_instance_before_detaching = true
+}
+
+resource "aws_volume_attachment" "oauth-db" {
+  device_name = "/dev/sdc"
+  volume_id   = aws_ebs_volume.oauth-db.id
+  instance_id = aws_instance.oauth.id
+
+  stop_instance_before_detaching = true
 }

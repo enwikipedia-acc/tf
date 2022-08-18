@@ -3,7 +3,7 @@ English Wikipedia ACC provisioning
 
 Note: This code is not designed for Production use; currently this is mostly experimental.
 
-## Usage:
+## OAuth test server 
 You'll need an AWS account. You can optionally use a Linode DNS-hosted zone as well if you want a nice hostname.
 
 ### AWS
@@ -42,3 +42,23 @@ When ready, run `terraform init` followed by `terraform apply`. This should crea
 Then go to oauth-aws, tweak the parameters in `terraform.tfvars` as you need to, and `terraform init` and `terraform apply` your way to infrastructure. You should get a DNS name given to you which you should be able to throw into a browser.
 
 If you use Linode for your DNS, you can specify the name of the zone and the name of the record to be created as a CNAME for your instance.
+
+### Setting up OAuth from scratch
+Not yet done, good luck.
+
+### WMCS deployment
+
+You can't use Terraform, so you'll have to do this manually.
+
+1. Shutoff the old instance and detach the cinder volumes.
+2. Create a new instance with the settings below
+3. Attach the cinder volumes to the new instance
+4. Create instance metadata called "publicdns" with value "accounts-oauth.wmflabs.org"
+5. Update novaproxy to point to the new instance
+6. Log into the box and run `acc-provision`
+
+Instance settings:
+    Name: accounts-mwoauthX
+    SecGroups: web/default
+    Flavour: g3.cores1.ram2.disk20
+    UserData: use the contents of the ./ansible/oauth-wmcs-userdata.sh file.

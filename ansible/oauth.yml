@@ -1,0 +1,101 @@
+---
+- name: Initial bootstrap
+  hosts: all
+
+  vars:
+    disktype: sd
+    dnsName: localhost
+    base_packages:
+      - libapache2-mod-php7.4
+      - mariadb-server
+      - redis
+      - htop
+      - aptitude
+      - php-mbstring
+      - php-xml
+      - php-redis
+      - php-mysql
+
+  tasks:
+    - name: Make www filesystem
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{disktype}}b"
+        opts: "-L oauth-www"
+    - name: Make db filesystem
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{disktype}}c"
+        opts: "-L oauth-db"
+
+    - name: Create www mountpoint
+      ansible.builtin.file:
+        path: "/var/www"
+        state: directory
+        mode: '0755'
+
+    - name: Create db mountpoint
+      ansible.builtin.file:
+        path: "/var/lib/mysql"
+        state: directory
+        mode: '0755'
+
+    - name: Mount www disk
+      ansible.posix.mount:
+        path: "/var/www"
+        src: "LABEL=oauth-www"
+        fstype: ext4
+        state: mounted
+
+    - name: Mount db disk
+      ansible.posix.mount:
+        path: "/var/lib/mysql"
+        src: "LABEL=oauth-db"
+        fstype: ext4
+        state: mounted
+
+    - name: Install packages
+      apt:
+        update_cache: yes
+        name: "{{ base_packages }}"
+    
+    - name: Fix FS permissions for /var/lib/mysql
+      ansible.builtin.file:
+        path: /var/lib/mysql
+        state: directory
+        recurse: yes
+        owner: mysql
+        group: mysql
+      notify: Restart mariadb
+    
+    - name: Remove default vhost
+      ansible.builtin.file:
+        path: /etc/apache2/sites-enabled/000-default.conf
+        state: absent
+      notify: Restart apache2
+    
+    - name: Deploy MediaWiki vhost
+      ansible.builtin.copy:
+        src: mediawiki.conf
+        dest: /etc/apache2/sites-enabled/mediawiki.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart apache2
+
+    - name: Ensure MW LocalSettings.php has the correct hostname
+      ansible.builtin.lineinfile:
+        path: /var/www/www/w/LocalSettings.php
+        regexp: '^\$wgServer = '
+        line: '$wgServer = "http://{{dnsName}}";'
+
+  handlers:
+    - name: Restart mariadb
+      service:
+        name: mariadb
+        state: restarted
+
+    - name: Restart apache2
+      service:
+        name: apache2
+        state: restarted
