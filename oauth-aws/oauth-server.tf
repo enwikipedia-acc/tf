@@ -88,7 +88,7 @@ git clone https://github.com/enwikipedia-acc/tf.git /opt/provisioning
 cd /opt/provisioning/ansible
 
 ln -s /opt/provisioning/ansible/provision-oauth.sh /usr/local/bin/acc-provision
-chmod a+rx /opt/provisioning/ansible/acc-provision.sh
+chmod a+rx /opt/provisioning/ansible/provision-oauth.sh
 
 acc-provision
 
