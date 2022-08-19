@@ -6,6 +6,7 @@
     disktype: sd
     dnsName: localhost
     base_packages:
+      - apache2
       - libapache2-mod-php7.4
       - mariadb-server
       - redis

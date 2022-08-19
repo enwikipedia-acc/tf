@@ -55,10 +55,12 @@ You can't use Terraform, so you'll have to do this manually.
 3. Attach the cinder volumes to the new instance
 4. Create instance metadata called "publicdns" with value "accounts-oauth.wmflabs.org"
 5. Update novaproxy to point to the new instance
-6. Log into the box and run `acc-provision`
+6. Log into the box 
+7. Check /var/log/cloud-init-output.log to make sure everything finished successfully
+8. Run `acc-provision`
 
 Instance settings:
-    Name: accounts-mwoauthX
-    SecGroups: web/default
-    Flavour: g3.cores1.ram2.disk20
-    UserData: use the contents of the ./ansible/oauth-wmcs-userdata.sh file.
+   * Name: accounts-mwoauthX
+   * SecGroups: web/default
+   * Flavour: g3.cores1.ram2.disk20
+   * UserData: use the contents of the ./ansible/oauth-wmcs-userdata.sh file.
