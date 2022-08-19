@@ -131,6 +131,7 @@ resource "aws_alb_target_group" "web80" {
     interval          = 5
     healthy_threshold = 2
     timeout           = 2
+    path = "/w/index.php/Main_Page"
   }
 
   vpc_id = var.vpc_id
