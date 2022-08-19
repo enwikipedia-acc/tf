@@ -4,7 +4,8 @@
 
   vars:
     disktype: sd
-    dnsName: localhost
+    wgServer: localhost
+    urlScheme: https
     base_packages:
       - apache2
       - libapache2-mod-php7.4
@@ -88,7 +89,7 @@
       ansible.builtin.lineinfile:
         path: /var/www/www/w/LocalSettings.php
         regexp: '^\$wgServer = '
-        line: '$wgServer = "http://{{dnsName}}";'
+        line: '$wgServer = "{{urlScheme}}://{{wgServer}}";'
 
   handlers:
     - name: Restart mariadb

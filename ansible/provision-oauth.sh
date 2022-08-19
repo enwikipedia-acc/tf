@@ -20,6 +20,7 @@ fi
 ### fetch target hostname
 
 # AWS with Linode?
+urlScheme=https
 dnsName=$(curl -f http://169.254.169.254/latest/meta-data/tags/instance/publicdns 2>/dev/null)
 if [[ $? -ne 0 ]] || [[ "${dnsName}" == "." ]]; then
     # openstack?
@@ -28,6 +29,7 @@ if [[ $? -ne 0 ]] || [[ "${dnsName}" == "." ]]; then
     if [[ $? -ne 0 ]] || [[ "${dnsName}" == "" ]]; then
         # plain AWS?
         dnsName=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname 2>/dev/null)
+        urlScheme=http
 
         if [[ $? -ne 0 ]]; then
             # welp.
@@ -35,12 +37,14 @@ if [[ $? -ne 0 ]] || [[ "${dnsName}" == "." ]]; then
         fi
     fi
 fi
-echo "Using http://${dnsName}/ as public endpoint."
+
+
+echo "Using ${urlScheme}://${dnsName}/ as public endpoint."
 
 ### run playbooks
 
 if stat /dev/${disktype}b >/dev/null && stat /dev/${disktype}c >/dev/null; then
-    ansible-playbook -i localhost, -c local -b /opt/provisioning/ansible/oauth.yml -e disktype=$disktype -e dnsName=$dnsName
+    ansible-playbook -i localhost, -c local -b /opt/provisioning/ansible/oauth.yml -e disktype=$disktype -e wgServer=$dnsName -e urlScheme=$urlScheme
 else
     echo "Required disks not yet mounted, not running automatic provisioning."
 fi

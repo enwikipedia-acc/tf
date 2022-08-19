@@ -1,12 +1,12 @@
 English Wikipedia ACC provisioning
 ================================
 
-Note: This code is not designed for Production use; currently this is mostly experimental.
+Note: This code is not designed for Production use; currently this is **ENTIRELY** experimental.
 
 ## OAuth test server 
 You'll need an AWS account. You can optionally use a Linode DNS-hosted zone as well if you want a nice hostname.
 
-### AWS
+### Deployment to AWS
 If you already use the AWS CLI, this may be already set up for you. These instructions are also intended for a Linux system; if you're on Windows/Mac, you're on your own.
 
 1. Create a folder in your home directory called `~/.aws`
@@ -23,10 +23,8 @@ aws_access_key_id = AKIAYZOJRTJVW6KVXOG2
 aws_secret_access_key = l4cLg+gobWkPQrX8BmHg/jlXw4d+ZE0gRH05RVm8
 ```
 
-### Linode
-These instructions are also intended for a Linux system; if you're on Windows/Mac, you're on your own.
 
-Create a file called `~/.config/linode` with the following content (substituting your Linode API token in place of the example below)
+If you want to use Linode for DNS, create a file called `~/.config/linode` with the following content (substituting your Linode API token in place of the example below)
 
 ```
 [default]
@@ -61,6 +59,6 @@ You can't use Terraform, so you'll have to do this manually.
 
 Instance settings:
    * Name: accounts-mwoauthX
-   * SecGroups: web/default
+   * SecGroups: web, default
    * Flavour: g3.cores1.ram2.disk20
-   * UserData: use the contents of the ./ansible/oauth-wmcs-userdata.sh file.
+   * UserData: use the file `./userdata/oauth/userdata.sh` file.
