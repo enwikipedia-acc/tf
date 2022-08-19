@@ -10,5 +10,5 @@ resource "linode_domain_record" "oauth" {
   domain_id   = data.linode_domain.aws[0].id
   name        = var.linode_dns_name
   record_type = "CNAME"
-  target      = aws_instance.oauth.public_dns
+  target      = var.use_lb ? module.loadbalancer[0].lb_hostname : aws_instance.oauth.public_dns
 }

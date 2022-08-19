@@ -99,6 +99,7 @@ resource "aws_ebs_volume" "oauth-www" {
   availability_zone = data.aws_subnet.az1-public.availability_zone
   size              = 3
   type              = "gp3"
+  snapshot_id       = var.snapshot_www
 
   tags = {
     "Name" = "oauth-www"
@@ -109,6 +110,7 @@ resource "aws_ebs_volume" "oauth-db" {
   availability_zone = data.aws_subnet.az1-public.availability_zone
   size              = 2
   type              = "gp3"
+  snapshot_id       = var.snapshot_db
 
   tags = {
     "Name" = "oauth-db"
@@ -130,3 +132,16 @@ resource "aws_volume_attachment" "oauth-db" {
 
   stop_instance_before_detaching = true
 }
+
+module "loadbalancer" {
+  count = var.use_lb ? 1 : 0
+  source = "./modules/loadbalancer"
+
+  project     = var.project
+  hostname    = local.hostname
+  subnet_a_id = data.aws_subnet.az1-public.id
+  subnet_b_id = data.aws_subnet.az2-public.id
+  vpc_id      = data.aws_vpc.main_vpc.id
+  instance_id = aws_instance.oauth.id
+}
+

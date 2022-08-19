@@ -34,7 +34,31 @@ variable "project" {
   default = "account-creation-assistance"
 }
 
+variable "use_lb" {
+  type = bool
+  default = false
+}
+
+variable "https" {
+  type = bool
+  default = false
+}
+
+variable "snapshot_www" {
+  type = string
+  default = ""
+}
+variable "snapshot_db" {
+  type = string
+  default = ""
+}
+
+locals {
+  urlscheme = var.https ? "https://" : "http://"
+  hostname = var.linode_dns ? "${var.linode_dns_name}.${var.linode_dns_zone}" :aws_instance.oauth.public_dns
+}
+
 output "dns" {
-  value = "http://${aws_instance.oauth.public_dns}/"
+  value = "${local.urlscheme}${local.hostname}/"
   description = "MediaWiki OAuth test instance:"
 }

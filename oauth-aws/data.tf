@@ -29,3 +29,12 @@ data "aws_subnet" "az1-public" {
 
   vpc_id = data.aws_vpc.main_vpc.id
 }
+
+data "aws_subnet" "az2-public" {
+  filter {
+    name   = "tag:Name"
+    values = ["${var.project}-az2-public"]
+  }
+
+  vpc_id = data.aws_vpc.main_vpc.id
+}

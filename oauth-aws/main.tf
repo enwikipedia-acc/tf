@@ -21,6 +21,7 @@ provider "aws" {
     tags = {
       "Terraform"  = "yes"
       "Project"    = var.project
+      "Module"     = "oauth-server"
     }
   }
 }
