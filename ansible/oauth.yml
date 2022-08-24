@@ -4,8 +4,6 @@
 
   vars:
     disktype: sd
-    wgServer: localhost
-    urlScheme: https
     base_packages:
       - apache2
       - libapache2-mod-php7.4
@@ -17,6 +15,9 @@
       - php-xml
       - php-redis
       - php-mysql
+      - php-intl
+      - composer
+      - python3-pymysql
 
   tasks:
     - name: Make www filesystem
@@ -84,13 +85,6 @@
         group: root
         mode: '0644'
       notify: Restart apache2
-
-    - name: Ensure MW LocalSettings.php has the correct hostname
-      ansible.builtin.lineinfile:
-        path: /var/www/www/w/LocalSettings.php
-        regexp: '^\$wgServer = '
-        line: '$wgServer = "{{urlScheme}}://{{wgServer}}";'
-
   handlers:
     - name: Restart mariadb
       service:
@@ -101,3 +95,178 @@
       service:
         name: apache2
         state: restarted
+
+- name: Deploy MediaWiki
+  hosts: all
+  vars:
+    wgServer: localhost
+    urlScheme: https
+  tasks:
+    - name: check if LocalSettings.php exists
+      stat: 
+        path: /var/www/www/w/LocalSettings.php
+      register: localsettings
+    - name: Create www mountpoint
+      ansible.builtin.file:
+        path: "/var/www/www"
+        state: directory
+        mode: '0755'
+    - name: Root redirect
+      ansible.builtin.copy:
+        content: '<?php header("Location: /w/index.php");'
+        dest: /var/www/www/index.php
+    - name: Create MySQL user
+      community.mysql.mysql_user:
+        state: present
+        name: wikiuser
+        password: wikiuser
+        priv:
+          'wikidb.*': 'ALL'
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+    - name: Create wiki database
+      community.mysql.mysql_db:
+        name: wikidb
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+    - name: MediaWiki git checkout
+      ansible.builtin.git:
+        repo: https://gerrit.wikimedia.org/r/mediawiki/core.git
+        dest: /var/www/www/w
+        version: REL1_38
+        recursive: false
+        accept_hostkey: true
+        force: yes
+        depth: 1
+    - name: AntiSpoof git checkout
+      ansible.builtin.git:
+        repo: https://gerrit.wikimedia.org/r/p/mediawiki/extensions/AntiSpoof.git
+        dest: /var/www/www/w/extensions/AntiSpoof
+        version: REL1_38
+        accept_hostkey: true
+        force: yes
+        depth: 1
+    - name: CheckUser git checkout
+      ansible.builtin.git:
+        repo: https://gerrit.wikimedia.org/r/p/mediawiki/extensions/CheckUser.git
+        dest: /var/www/www/w/extensions/CheckUser
+        version: REL1_38
+        accept_hostkey: true
+        force: yes
+        depth: 1
+    - name: TitleBlacklist git checkout
+      ansible.builtin.git:
+        repo: https://gerrit.wikimedia.org/r/p/mediawiki/extensions/TitleBlacklist.git
+        dest: /var/www/www/w/extensions/TitleBlacklist
+        version: REL1_38
+        accept_hostkey: true
+        force: yes
+        depth: 1
+    - name: OAuth git checkout
+      ansible.builtin.git:
+        repo: https://gerrit.wikimedia.org/r/p/mediawiki/extensions/OAuth.git
+        dest: /var/www/www/w/extensions/OAuth
+        version: REL1_38
+        accept_hostkey: true
+        force: yes
+        depth: 1
+    - name: Vector git checkout
+      ansible.builtin.git:
+        repo: https://gerrit.wikimedia.org/r/mediawiki/skins/Vector.git
+        dest: /var/www/www/w/skins/Vector
+        version: REL1_38
+        accept_hostkey: true
+        force: yes
+        depth: 1
+    - name: Composer
+      include_tasks: composer.yml
+      loop:
+        - ""
+        - extensions/CheckUser/
+        - extensions/TitleBlacklist/
+        - extensions/OAuth/
+        - extensions/AntiSpoof/
+
+    - name: Install MediaWiki
+      ansible.builtin.shell: 
+        cmd: |
+          php maintenance/install.php \
+            --dbname=wikidb --dbserver=localhost --dbuser=wikiuser --dbpass=wikiuser \
+            --server={{urlScheme}}://{{wgServer}} --scriptpath=/w --lang=en \
+            --with-extensions --pass="AdminOAuth123!" "OAuth Test Wiki" "Admin"
+        creates: /var/www/www/w/LocalSettings.php
+        chdir: /var/www/www/w
+
+    - name: Ensure MW LocalSettings.php has the correct hostname
+      ansible.builtin.lineinfile:
+        path: /var/www/www/w/LocalSettings.php
+        regexp: '^\$wgServer = '
+        line: '$wgServer = "{{urlScheme}}://{{wgServer}}";'
+
+    - name: Load additional settings for MW
+      lineinfile:
+        dest: /var/www/www/w/LocalSettings.php
+        line: "include_once('/var/www/www/w/CustomSettings.php');"
+
+    - name: Custom settings
+      ansible.builtin.copy:
+        content: |
+          <?php
+          // THIS FILE MANAGED BY ANSIBLE.
+
+          // Caching setup
+          $wgObjectCaches['redis'] = array(
+              'class'                => 'RedisBagOStuff',
+              'servers'              => array( '127.0.0.1:6379' ),
+          );
+
+          $wgMainCacheType = 'redis';
+          $wgSessionCacheType = 'redis';  // same as WMF prod
+
+          // OAuth setup
+          $wgGroupPermissions['*']['createaccount'] = false;
+          $wgGroupPermissions['*']['edit'] = false;
+          $wgGroupPermissions['user']['mwoauthproposeconsumer'] = true;
+          $wgGroupPermissions['user']['mwoauthupdateownconsumer'] = true;
+          $wgGroupPermissions['user']['mwoauthmanageconsumer'] = true;
+          $wgGroupPermissions['user']['mwoauthmanagemygrants'] = true;
+          $wgGroupPermissions['suppress']['mwoauthsuppress'] = true;
+          $wgGroupPermissions['suppress']['mwoauthviewsuppressed'] = true;
+          $wgGroupPermissions['checkuser']['mwoauthviewprivate'] = true;
+
+          $wgMWOAuthSecureTokenTransfer = false;
+
+          $wgEmailAuthentication = false;
+
+          $wgShowExceptionDetails = true;
+        dest: /var/www/www/w/CustomSettings.php
+
+    - name: Update MediaWiki
+      ansible.builtin.shell: 
+        cmd: php maintenance/update.php --quick
+        chdir: /var/www/www/w
+
+    - name: Update Main Page
+      ansible.builtin.shell: 
+        cmd: php maintenance/edit.php -b --user "Ansible playbook"  "Main Page"
+        chdir: /var/www/www/w
+        stdin: |
+          This wiki is intended for testing OAuth applications against MediaWiki.
+
+          == OAuth consumers ==
+
+          * [[Special:OAuthConsumerRegistration/propose|Propose a consumer]]
+          * [[Special:OAuthManageConsumers/proposed|Approve the consumer]]
+
+
+          * [[Special:OAuthConsumerRegistration/list|My registered consumers]]
+
+
+          * [[Special:OAuthManageMyGrants|Consumers approved to access my account]]
+
+          == All consumers ==
+          * [[Special:OAuthManageConsumers/proposed|All proposed consumers]]
+          * [[Special:OAuthManageConsumers/approved|All approved consumers]]
+
+          * [[Special:OAuthManageConsumers/disabled|All disabled consumers]]
+          * [[Special:OAuthManageConsumers/rejected|All rejected consumers]]
+          * [[Special:OAuthManageConsumers/expired|All expired consumers]]

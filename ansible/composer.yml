@@ -1,0 +1,15 @@
+---
+- name: check if composer.lock exists
+  stat: 
+    path: /var/www/www/w/{{item}}composer.lock
+  register: composer
+- name: Install composer dependencies
+  ansible.builtin.shell: 
+    cmd: bash -l -c 'export COMPOSER_HOME=/tmp; composer install'
+    chdir: /var/www/www/w/{{item}}
+  when: composer.stat.exists == false
+- name: Update composer dependencies
+  ansible.builtin.shell: 
+    cmd: bash -l -c 'export COMPOSER_HOME=/root; composer update'
+    chdir: /var/www/www/w/{{item}}
+  when: composer.stat.exists == true

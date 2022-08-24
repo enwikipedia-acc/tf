@@ -28,6 +28,18 @@ resource "aws_security_group" "web" {
     protocol  = "tcp"
   }
 
+  egress {
+    description = "SSH outbound for git"
+    # Required for SSM
+
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+  }
+
   ingress {
     description = "HTTP inbound"
 
@@ -50,14 +62,35 @@ resource "aws_security_group" "web" {
   }
 }
 
-resource "aws_instance" "oauth" {
-  ami                    = data.aws_ami.debian-bullseye.id
-  instance_type          = var.oauth_instance_type_aws
-  subnet_id              = data.aws_subnet.az1-public.id
-  iam_instance_profile   = "AmazonSSMRoleForInstancesQuickSetup"
-  key_name               = var.key_pair_name
-  vpc_security_group_ids = [aws_security_group.web.id]
+resource "aws_iam_instance_profile" "ssm" {
+  name = "${var.project}-ssm"
+  role = aws_iam_role.ssm.name
+}
 
+resource "aws_iam_role" "ssm" {
+  name               = "${var.project}-ssm"
+  assume_role_policy = data.aws_iam_policy_document.assumerole.json
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_core" {
+  role       = aws_iam_role.ssm.name
+  policy_arn = data.aws_iam_policy.ssm_core.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_patch" {
+  role       = aws_iam_role.ssm.name
+  policy_arn = data.aws_iam_policy.ssm_patch.arn
+}
+
+resource "aws_instance" "oauth" {
+  ami                                  = data.aws_ami.debian-bullseye.id
+  instance_type                        = var.oauth_instance_type_aws
+  subnet_id                            = data.aws_subnet.az1-public.id
+  iam_instance_profile                 = aws_iam_instance_profile.ssm.name
+  key_name                             = var.key_pair_name
+  vpc_security_group_ids               = [aws_security_group.web.id]
+  associate_public_ip_address          = true
+  monitoring                           = false
   instance_initiated_shutdown_behavior = "terminate"
 
   tags = {
@@ -79,7 +112,7 @@ resource "aws_instance" "oauth" {
   }
 
   user_data_replace_on_change = true
-  user_data = templatefile("${path.module}/aws-userdata.tftpl", { baseScript = file("${path.module}/../userdata/oauth/userdata.sh")}) 
+  user_data                   = file("${path.module}/../userdata/oauth/userdata.sh")
 }
 
 resource "aws_ebs_volume" "oauth-www" {
@@ -121,7 +154,7 @@ resource "aws_volume_attachment" "oauth-db" {
 }
 
 module "loadbalancer" {
-  count = var.use_lb ? 1 : 0
+  count  = var.use_lb ? 1 : 0
   source = "./modules/loadbalancer"
 
   project     = var.project

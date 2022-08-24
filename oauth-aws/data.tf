@@ -38,3 +38,24 @@ data "aws_subnet" "az2-public" {
 
   vpc_id = data.aws_vpc.main_vpc.id
 }
+
+data "aws_iam_policy" "ssm_patch" {
+  name = "AmazonSSMPatchAssociation"
+}
+
+data "aws_iam_policy" "ssm_core" {
+  name = "AmazonSSMManagedInstanceCore"
+}
+
+data "aws_iam_policy_document" "assumerole" {
+  statement {
+    actions = [
+      "sts:AssumeRole"
+    ]
+
+    principals {
+      type ="Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}

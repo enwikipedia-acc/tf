@@ -42,20 +42,23 @@ Then go to oauth-aws, tweak the parameters in `terraform.tfvars` as you need to,
 If you use Linode for your DNS, you can specify the name of the zone and the name of the record to be created as a CNAME for your instance.
 
 ### Setting up OAuth from scratch
-Not yet done, good luck.
+
+If you're doing this from scratch, the playbook that's run to set up the instance should configure a fully-working MediaWiki instance you can use. Default credentials:
+ * Username: `Admin`
+ * Password: `AdminOAuth123!`
 
 ### WMCS deployment
 
 You can't use Terraform, so you'll have to do this manually.
 
 1. Shutoff the old instance and detach the cinder volumes.
-2. Create a new instance with the settings below
+2. Create a new instance with the settings below. If you're nervous about being able to complete the next two steps quickly, drop the `acc-provision` line from near the bottom of the userdata.
 3. Attach the cinder volumes to the new instance
 4. Create instance metadata called "publicdns" with value "accounts-oauth.wmflabs.org"
 5. Update novaproxy to point to the new instance
 6. Log into the box 
-7. Check /var/log/cloud-init-output.log to make sure everything finished successfully
-8. Run `acc-provision`
+7. Check /var/log/cloud-init-output.log to make sure everything finished successfully. You should see "Cloud-init finished"
+8. Run `acc-provision` if it wasn't run by userdata already.
 
 Instance settings:
    * Name: accounts-mwoauthX
