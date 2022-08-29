@@ -11,6 +11,10 @@ variable "project" {
   type = string
 }
 
+variable "name" {
+  type = string
+}
+
 variable "subnet_a_id" {
   type = string
 }
@@ -26,22 +30,30 @@ variable "vpc_id" {
 variable "instance_id" {
   type = string
 }
+variable "healthcheck_path" {
+  type    = string
+  default = "/"
+}
+
+variable "target_sgs" {
+  type = list(string)
+  default = []
+}
 
 output "lb_hostname" {
   value = aws_alb.web.dns_name
 }
 
 resource "aws_security_group" "web" {
-  name        = "${var.project}-lb"
-  description = "${var.project} Load Balancer SG"
+  name        = "lb-${var.name}"
+  description = "${var.project} Load Balancer"
 
   vpc_id = var.vpc_id
 
   egress {
     description = "HTTP outbound"
 
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    security_groups = var.target_sgs
 
     from_port = 80
     to_port   = 80
@@ -73,7 +85,7 @@ resource "aws_security_group" "web" {
 }
 
 resource "aws_alb" "web" {
-  name = "${var.project}-lb"
+  name = "${var.name}-lb"
 
   enable_http2 = true
 
@@ -125,19 +137,19 @@ data "aws_acm_certificate" "web" {
 resource "aws_alb_target_group" "web80" {
   port     = 80
   protocol = "HTTP"
-  name     = "lb-tg80"
+  name     = "lb-${var.name}-tg80"
 
   health_check {
     interval          = 5
     healthy_threshold = 2
     timeout           = 2
-    path = "/w/index.php/Main_Page"
+    path              = var.healthcheck_path
   }
 
   vpc_id = var.vpc_id
 }
 
-resource "aws_lb_target_group_attachment" "test" {
+resource "aws_lb_target_group_attachment" "application" {
   target_group_arn = aws_alb_target_group.web80.arn
   target_id        = var.instance_id
   port             = 80

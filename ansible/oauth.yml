@@ -61,6 +61,7 @@
       apt:
         update_cache: yes
         name: "{{ base_packages }}"
+      notify: Restart apache2
     
     - name: Fix FS permissions for /var/lib/mysql
       ansible.builtin.file:
@@ -180,11 +181,11 @@
     - name: Composer
       include_tasks: composer.yml
       loop:
-        - ""
-        - extensions/CheckUser/
-        - extensions/TitleBlacklist/
-        - extensions/OAuth/
-        - extensions/AntiSpoof/
+        - /var/www/www/w/
+        - /var/www/www/w/extensions/CheckUser/
+        - /var/www/www/w/extensions/TitleBlacklist/
+        - /var/www/www/w/extensions/OAuth/
+        - /var/www/www/w/extensions/AntiSpoof/
 
     - name: Install MediaWiki
       ansible.builtin.shell: 

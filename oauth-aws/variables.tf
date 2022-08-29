@@ -34,6 +34,11 @@ variable "project" {
   default = "account-creation-assistance"
 }
 
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
 variable "use_lb" {
   type = bool
   default = false

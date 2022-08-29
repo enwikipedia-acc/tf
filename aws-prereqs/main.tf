@@ -14,9 +14,10 @@ provider "aws" {
 
   default_tags {
     tags = {
-      "Terraform"  = "yes"
-      "Project"    = var.project
-      "Module"     = "aws-prereqs"
+      "Terraform"   = "yes"
+      "Project"     = var.project
+      "Module"      = "aws-prereqs"
+      "Environment" = var.environment
     }
   }
 }

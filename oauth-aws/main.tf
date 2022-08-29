@@ -19,9 +19,10 @@ provider "aws" {
 
   default_tags {
     tags = {
-      "Terraform"  = "yes"
-      "Project"    = var.project
-      "Module"     = "oauth-server"
+      "Terraform"   = "yes"
+      "Project"     = var.project
+      "Module"      = "oauth-server"
+      "Environment" = var.environment
     }
   }
 }
