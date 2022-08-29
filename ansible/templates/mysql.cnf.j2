@@ -1,0 +1,22 @@
+# {{ ansible_managed }}
+
+[mysqld]
+# Network
+bind-address            = 0.0.0.0
+
+# Replication
+log_bin                 = /var/log/mysql/mysql-bin
+log_slave_updates       = 1
+
+# Query logging
+slow_query_log_file     = /var/log/mysql/mysql-slow.log
+slow_query_log          = 1
+long_query_time         = 0.3
+log_queries_not_using_indexes
+
+# InnoDB tuning
+innodb_buffer_pool_size = 1536M
+innodb_log_file_size    = 512M
+
+# Tablespace tuning
+innodb_file_per_table   = on

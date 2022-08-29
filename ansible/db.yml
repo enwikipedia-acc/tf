@@ -1,0 +1,123 @@
+---
+- name: Initial bootstrap
+  hosts: all
+
+  vars:
+    disktype: sd
+    base_packages:
+      - htop
+      - aptitude
+      - bind9-utils
+      - dnsutils
+      - mariadb-server
+      - percona-toolkit
+      - python3-pymysql
+
+  tasks:
+    - name: Make db filesystem
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{disktype}}b"
+        opts: "-L app-db"
+
+    - name: Create db mountpoint
+      ansible.builtin.file:
+        path: "/var/lib/mysql"
+        state: directory
+        mode: '0755'
+
+    - name: Mount db disk
+      ansible.posix.mount:
+        path: "/var/lib/mysql"
+        src: "LABEL=app-db"
+        fstype: ext4
+        state: mounted
+
+    - name: Make backup filesystem
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{disktype}}c"
+        opts: "-L app-dbbackup"
+
+    - name: Create dbbackup mountpoint
+      ansible.builtin.file:
+        path: "/media/backup"
+        state: directory
+        mode: '0755'
+
+    - name: Mount dbbackup disk
+      ansible.posix.mount:
+        path: "/media/backup"
+        src: "LABEL=app-dbbackup"
+        fstype: ext4
+        state: mounted
+
+    - name: Install packages
+      apt:
+        update_cache: yes
+        name: "{{ base_packages }}"
+    
+    - name: Fix FS permissions for /var/lib/mysql
+      ansible.builtin.file:
+        path: /var/lib/mysql
+        state: directory
+        recurse: yes
+        owner: mysql
+        group: mysql
+      notify: Restart mariadb
+    
+  handlers:
+    - name: Restart mariadb
+      service:
+        name: mariadb
+        state: restarted
+
+- name: Setup database
+  hosts: all
+
+  tasks:
+    - name: Pick a server ID
+      set_fact:
+        server_id: "{{ 100000 | random }}"
+      run_once: yes
+
+    - name: MariaDB server_id
+      ansible.builtin.template:
+        src: templates/mysql-serverid.cnf.j2
+        dest: /etc/mysql/mariadb.conf.d/99-acc-wmflabs-serverid.cnf
+        owner: root
+        group: root
+        mode: '0644'
+        force: no
+      notify: Restart mariadb
+
+    - name: MariaDB configuration
+      ansible.builtin.template:
+        src: templates/mysql.cnf.j2
+        dest: /etc/mysql/mariadb.conf.d/60-acc-wmflabs.cnf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart mariadb
+
+    - name: "Backup script"
+      ansible.builtin.copy:
+        src: backup.sh
+        dest: /media/backup/backup.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: "Setup backups"
+      ansible.builtin.cron:
+        name: Nightly backups
+        hour: "0"
+        minute: "0"
+        user: root
+        job: "/media/backup/backup.sh > /media/backup/backup.log 2>&1"
+        cron_file: waca
+  handlers:
+    - name: Restart mariadb
+      service:
+        name: mariadb
+        state: restarted
