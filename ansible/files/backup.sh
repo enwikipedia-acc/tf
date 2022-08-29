@@ -21,4 +21,4 @@ else
 fi
 
 # Clean up old files
-ls -tp *.sql.gz | grep -v '/$' | tail -n +6 | xargs -d '\n' rm --
+ls -tp *.sql.gz | grep -v '/$' | tail -n +6 | xargs -rd '\n' rm --
