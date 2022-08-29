@@ -12,7 +12,7 @@ cd /media/backup/daily
 
 FILENAME="`date -u +%Y%m%dT%H%M%SZ`.sql"
 
-mysqldump --defaults-extra-file=/etc/mysql/debian.cnf --all-databases --complete-insert --disable-keys --hex-blob --quote-names --opt --single-transaction --tz-utc --flush-logs --flush-privileges --master-data=1 > "${FILENAME}"
+mysqldump --defaults-extra-file=/media/backup/backup.cnf --all-databases --complete-insert --disable-keys --hex-blob --quote-names --opt --single-transaction --tz-utc --flush-logs --flush-privileges --master-data=1 > "${FILENAME}"
 
 if [ $? == 0 ]; then
   gzip -9f "${FILENAME}"

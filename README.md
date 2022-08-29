@@ -65,3 +65,35 @@ Instance settings:
    * SecGroups: web, default
    * Flavour: g3.cores1.ram2.disk20
    * UserData: use the file `./userdata/oauth/userdata.sh` file.
+
+## Application
+
+### Provisioning database
+
+1. Create the Cinder volumes
+2. Create a new instance with the settings below. If you're nervous about being able to complete the next two steps quickly, drop the `acc-provision` line from near the bottom of the userdata.
+3. Attach the cinder volumes to the new instance. Attach db disk first, then backup disk
+6. Log into the box 
+7. Check /var/log/cloud-init-output.log to make sure everything finished successfully. You should see "Cloud-init finished"
+8. Run `acc-provision` if it wasn't run by userdata already.
+
+Instance settings:
+   * Name: accounts-dbX
+   * SecGroups: database, default
+   * Flavour: g3.cores1.ram2.disk20
+   * UserData: use the file `./userdata/app/db-userdata.sh` file.
+
+### Provisioning application
+
+1. Create the Cinder volume
+2. Create a new instance with the settings below. If you're nervous about being able to complete the next two steps quickly, drop the `acc-provision` line from near the bottom of the userdata.
+3. Attach the cinder volume to the new instance.
+6. Log into the box 
+7. Check /var/log/cloud-init-output.log to make sure everything finished successfully. You should see "Cloud-init finished"
+8. Run `acc-provision` if it wasn't run by userdata already.
+
+Instance settings:
+   * Name: accounts-appserverX
+   * SecGroups: database, default
+   * Flavour: g3.cores1.ram2.disk20
+   * UserData: use the file `./userdata/app/app-userdata.sh` file.
