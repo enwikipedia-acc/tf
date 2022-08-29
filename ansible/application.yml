@@ -1,0 +1,36 @@
+---
+- name: Deploy production application
+  hosts: all
+  tasks:
+    - name: application git checkout
+      ansible.builtin.git:
+        repo: https://github.com/enwikipedia-acc/waca.git
+        dest: /srv/production
+        version: rel7.14.1
+        recursive: false
+        accept_hostkey: true
+        force: yes
+    - name: prod application dir
+      ansible.builtin.file:
+        path: "/srv/production"
+        state: directory
+        mode: '2755'
+        owner: root
+        group: www-data
+    - name: prod application dir
+      ansible.builtin.file:
+        path: "/srv/production/templates_c"
+        state: directory
+        mode: '0755'
+        owner: www-data
+        group: www-data
+
+    - name: Install composer dependencies
+      ansible.builtin.shell: 
+        cmd: bash -l -c 'export COMPOSER_HOME=/tmp; composer install'
+        chdir: /srv/production/
+
+    - name: Regen stylesheets
+      ansible.builtin.shell: 
+        cmd: php maintenance/RegenerateStylesheets.php
+        chdir: /srv/production/
