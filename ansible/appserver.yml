@@ -111,6 +111,7 @@
         user: www-data
         job: "bash -l -c 'cd /srv/production/maintenance; php RunJobQueue.php > /tmp/jobqueue 2>&1'"
         cron_file: waca
+
     - name: "Cron: Report link refresh"
       ansible.builtin.cron:
         name: Report link refresh
@@ -122,7 +123,7 @@
     
     - name: "Cron: DQBot"
       ansible.builtin.cron:
-        name: Report link refresh
+        name: DQBot
         minute: "*/15"
         user: www-data
         job: "bash -l -c 'cd /srv/acc-cu/; /usr/bin/python acc_cu.py'"
