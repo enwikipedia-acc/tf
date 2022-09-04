@@ -119,6 +119,14 @@
         user: www-data
         job: "cd /srv/dev/r; ./refresh.sh > /srv/dev/report/latesturls.txt"
         cron_file: waca
+    
+    - name: "Cron: DQBot"
+      ansible.builtin.cron:
+        name: Report link refresh
+        minute: "*/15"
+        user: www-data
+        job: "bash -l -c 'cd /srv/acc-cu/; /usr/bin/python acc_cu.py'"
+        cron_file: waca
 
     - name: Prometheus configuration
       ansible.builtin.copy:
