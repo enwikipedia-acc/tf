@@ -155,7 +155,8 @@
       ansible.builtin.lineinfile:
         path: /etc/default/prometheus
         regexp: '^ARGS="'
-        line: 'ARGS="--web.external-url=http://localhost:9090/prometheus --storage.tsdb.retention.time=365d"'
+        line: 'ARGS="--web.external-url=http://localhost:9090/prometheus --storage.tsdb.retention.time=365d "'
+      notify: Restart prometheus
   handlers:
     - name: Restart apache2
       service:
