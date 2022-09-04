@@ -19,10 +19,10 @@
       - php7.4-mysql
       - php7.4-xml
       - composer
-      - rabbitmq-server
       - prometheus
       - python3-pymysql
       - mariadb-client
+      - rrdtool
   tasks:
     - name: Make www filesystem
       community.general.filesystem:
@@ -119,57 +119,6 @@
         user: www-data
         job: "cd /srv/dev/r; ./refresh.sh > /srv/dev/report/latesturls.txt"
         cron_file: waca
-
-    - name: Enable RabbitMQ plugins
-      community.rabbitmq.rabbitmq_plugin:
-        names: rabbitmq_management,rabbitmq_shovel_management
-        state: enabled
-    
-    - name: RabbitMQ users
-      ansible.builtin.shell: 
-        cmd: "{{ item }}"
-      loop:
-        - rabbitmqadmin declare user name=acc-prod password=changeme tags=
-        - rabbitmqadmin declare permission vhost=/ user=acc-prod 'configure=^$' 'write=^acc\.notification$' 'read=^$'
-        - rabbitmqadmin declare user name=shovel password=changeme tags=
-        - rabbitmqadmin declare permission vhost=/ user=shovel 'configure=^$' 'write=^$' 'read=^acc\.notification\.queue$'
-        - rabbitmqctl clear_password shovel
-
-    - name: RabbitMQ configure policy
-      ansible.builtin.shell: 
-        cmd: "{{ item }}"
-      loop:
-        - >
-          rabbitmqadmin declare policy name=notificationqueue pattern='^acc\.notification\.queue$' definition='{"dead-letter-exchange": "acc.deadletter", "max-length": 20, "message-ttl": 900000}' apply-to=queues
-
-    - name: RabbitMQ exchanges
-      ansible.builtin.shell: 
-        cmd: "{{ item }}"
-      loop:
-        - rabbitmqadmin declare exchange name=acc.notification type=fanout durable=true
-        - rabbitmqadmin declare exchange name=acc.deadletter type=fanout durable=true
-
-    - name: RabbitMQ queues
-      ansible.builtin.shell: 
-        cmd: "{{ item }}"
-      loop:
-        - rabbitmqadmin declare queue name=acc.notification.queue durable=true
-        - >
-          rabbitmqadmin declare queue name=acc.deadletter.queue durable=true arguments='{"x-queue-mode": "lazy"}'
-
-    - name: RabbitMQ notification binding
-      community.rabbitmq.rabbitmq_binding:
-        name: acc.notification
-        destination: acc.notification.queue
-        type: queue
-        routing_key: ""
-
-    - name: RabbitMQ deadletter binding
-      community.rabbitmq.rabbitmq_binding:
-        name: acc.deadletter
-        destination: acc.deadletter.queue
-        type: queue
-        routing_key: ""
 
     - name: Prometheus configuration
       ansible.builtin.copy:
