@@ -141,8 +141,11 @@
               static_configs:
                 - targets: ['localhost:9090']
             - job_name: acc
+              scheme: https
+              tls_config:
+                insecure_skip_verify: true
               static_configs:
-                - targets: ['localhost:8080']
+                - targets: ['accounts-dev.wmflabs.org']
               metrics_path: '/other/prometheus.php'
         dest: /etc/prometheus/prometheus.yml
       notify: Restart prometheus
