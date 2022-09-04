@@ -149,6 +149,12 @@
               metrics_path: '/other/prometheus.php'
         dest: /etc/prometheus/prometheus.yml
       notify: Restart prometheus
+
+    - name: Ensure Prometheus path is set correctly
+      ansible.builtin.lineinfile:
+        path: /etc/default/prometheus
+        regexp: '^ARGS="'
+        line: 'ARGS="--web.external-url=http://localhost:9090/prometheus --storage.tsdb.retention.time=365d"'
   handlers:
     - name: Restart apache2
       service:
