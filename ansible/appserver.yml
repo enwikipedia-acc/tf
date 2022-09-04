@@ -132,6 +132,7 @@
     - name: Prometheus configuration
       ansible.builtin.copy:
         content: |
+          # MANAGED BY ANSIBLE
           global:
             scrape_interval:     1m
             evaluation_interval: 1m
