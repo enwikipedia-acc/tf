@@ -109,7 +109,7 @@
         name: Job queue
         minute: "*/2"
         user: www-data
-        job: "bash -l -c 'cd /srv/production/maintenance; php RunJobQueue.php &>/dev/null'"
+        job: "bash -l -c 'cd /srv/production/maintenance; php RunJobQueue.php > /tmp/jobqueue 2>&1'"
         cron_file: waca
     - name: "Cron: Report link refresh"
       ansible.builtin.cron:
