@@ -22,3 +22,12 @@ provider "registry.terraform.io/terraform-provider-openstack/openstack" {
     "zh:b3905869f6fea27ffd144eb8221ea67aeca63e23c06af43a221e55634faef3e2",
   ]
 }
+
+provider "terraform.wmcloud.org/registry/cloudvps" {
+  version     = "0.1.1"
+  constraints = "~> 0.1.1"
+  hashes = [
+    "h1:wmH/F/bQxpcCJG2gapqBeicTgGIwvRO7F7u6+Dlonnk=",
+    "zh:9f677acd305cad19806a03604a2976d9ea74c1fb2db84c644c26511848a3f3bf",
+  ]
+}
