@@ -176,6 +176,9 @@
         - /var/www/www/w/extensions/OAuth/
         - /var/www/www/w/extensions/AntiSpoof/
 
+    - name: Generate wgSecretKey
+      shell: openssl rand -hex 32
+      register: wgSecretKey
     - name: Local settings
       ansible.builtin.copy:
         content: |
@@ -207,7 +210,7 @@
           $wgMemCachedServers = [];
           $wgLocaltimezone = "UTC";
 
-          $wgSecretKey = "5276c932bf8fe4fae00e74d2c19b3e26190dd00ff501ca82145d13d5258ad136";
+          $wgSecretKey = "{{wgSecretKey.stdout}}";
 
           $wgAuthenticationTokenVersion = "1";
 
@@ -248,7 +251,7 @@
           $wgEmailAuthentication = false;
           $wgShowExceptionDetails = true;
           $wgBlockDisablesLogin = true;
-        dest: /var/www/www/w/CustomSettings.php
+        dest: /var/www/www/w/LocalSettings.php
 
     - name: Update MediaWiki
       ansible.builtin.shell: 
