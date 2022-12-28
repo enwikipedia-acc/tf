@@ -204,6 +204,7 @@
           $wgPasswordSender = "apache@{{wgServer}}";
 
           $wgDBpassword = "wikiuser";
+          $wgDBname = "wikidb";
           $wgDBTableOptions = "ENGINE=InnoDB, DEFAULT CHARSET=binary";
           $wgSharedTables[] = "actor";
 
