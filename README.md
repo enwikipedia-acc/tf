@@ -3,6 +3,13 @@ English Wikipedia ACC provisioning
 
 Note: This code is not designed for Production use; currently this is **ENTIRELY** experimental.
 
+### Required prerequisite knowledge for using this repository
+* Terraform
+* Ansible
+* Wikimedia Cloud Services
+* Blue-green deployment
+
+
 ### Setting up OAuth from scratch
 
 If you're doing this from scratch, the playbook that's run to set up the instance should configure a fully-working MediaWiki instance you can use. Default credentials:
