@@ -227,6 +227,11 @@
           $wgEmailAuthentication = false;
 
           $wgShowExceptionDetails = true;
+
+          $wgRightsUrl = "https://creativecommons.org/publicdomain/zero/1.0/";
+          $wgRightsText = "Creative Commons Zero (Public Domain)";
+          $wgRightsIcon = "$wgResourceBasePath/resources/assets/licenses/cc-0.png";
+
         dest: /var/www/www/w/CustomSettings.php
 
     - name: Update MediaWiki
