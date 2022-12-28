@@ -63,15 +63,6 @@
         name: "{{ base_packages }}"
       notify: Restart apache2
     
-    - name: Fix FS permissions for /var/lib/mysql
-      ansible.builtin.file:
-        path: /var/lib/mysql
-        state: directory
-        recurse: yes
-        owner: mysql
-        group: mysql
-      notify: Restart mariadb
-    
     - name: Remove default vhost
       ansible.builtin.file:
         path: /etc/apache2/sites-enabled/000-default.conf
@@ -86,6 +77,15 @@
         group: root
         mode: '0644'
       notify: Restart apache2
+    
+    - name: Fix FS permissions for /var/lib/mysql
+      ansible.builtin.file:
+        path: /var/lib/mysql
+        state: directory
+        recurse: yes
+        owner: mysql
+        group: mysql
+      notify: Restart mariadb
   handlers:
     - name: Restart mariadb
       service:
@@ -271,3 +271,25 @@
           * [[Special:OAuthManageConsumers/disabled|All disabled consumers]]
           * [[Special:OAuthManageConsumers/rejected|All rejected consumers]]
           * [[Special:OAuthManageConsumers/expired|All expired consumers]]
+
+    - name: Update Title blacklist
+      ansible.builtin.shell: 
+        cmd: php maintenance/edit.php -b --user "Ansible playbook"  "MediaWiki:Titleblacklist"
+        chdir: /var/www/www/w
+        stdin: |
+          # This is a disallowed titles list. Titles and usernames that match a regular expression here cannot be created.
+          # Use "#" for comments.
+          # This is case-insensitive by default
+          .*blacklist.* <newaccountonly>
+
+    - name: Update copyright
+      ansible.builtin.shell: 
+        cmd: php maintenance/edit.php -b --user "Ansible playbook"  "MediaWiki:Copyright"
+        chdir: /var/www/www/w
+        stdin: |
+          Content is available under $1 unless otherwise noted.
+
+          <div style="background-color: #FFE0E0; border: 2px dashed #AA0000; padding: 0.5em; margin-top:1em">
+          <b>Warning: this is <u>not</u> a live Wikimedia Foundation project.</b> This site is used only for testing and development purposes. This site is not covered by the Wikimedia Foundation’s Terms of Use or Privacy Policy. Do not disclose personal information on this site and do not use this site to post any illegal or harmful content. For more information on this test environment, see <a href="https://wikitech.wikimedia.org">Wikimedia Cloud Services</a>.
+          </div>
+
