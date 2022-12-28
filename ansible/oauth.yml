@@ -20,15 +20,10 @@
       - python3-pymysql
 
   tasks:
-    - name: Make www filesystem
-      community.general.filesystem:
-        fstype: ext4
-        dev: "/dev/{{disktype}}b"
-        opts: "-L oauth-www"
     - name: Make db filesystem
       community.general.filesystem:
         fstype: ext4
-        dev: "/dev/{{disktype}}c"
+        dev: "/dev/{{disktype}}b"
         opts: "-L oauth-db"
 
     - name: Create www mountpoint
@@ -42,13 +37,6 @@
         path: "/var/lib/mysql"
         state: directory
         mode: '0755'
-
-    - name: Mount www disk
-      ansible.posix.mount:
-        path: "/var/www"
-        src: "LABEL=oauth-www"
-        fstype: ext4
-        state: mounted
 
     - name: Mount db disk
       ansible.posix.mount:
