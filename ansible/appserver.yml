@@ -152,6 +152,16 @@
         dest: /etc/prometheus/prometheus.yml
       notify: Restart prometheus
 
+    - name: Git directory configuration
+      ansible.builtin.copy:
+        content: |
+          # MANAGED BY ANSIBLE
+          [safe]
+              directory = /srv/production
+              directory = /srv/dev/rc
+              directory = /srv/dev/demo
+        dest: /etc/gitconfig
+
     - name: Ensure Prometheus path is set correctly
       ansible.builtin.lineinfile:
         path: /etc/default/prometheus
