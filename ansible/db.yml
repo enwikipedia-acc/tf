@@ -12,6 +12,7 @@
       - mariadb-server
       - percona-toolkit
       - python3-pymysql
+      - cron
 
   tasks:
     - name: Make db filesystem
