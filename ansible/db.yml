@@ -66,6 +66,15 @@
         owner: mysql
         group: mysql
       notify: Restart mariadb
+
+    - name: Define binlog dir /var/log/mysql
+      ansible.builtin.file:
+        path: /var/log/mysql
+        state: directory
+        recurse: yes
+        owner: mysql
+        group: adm
+      notify: Restart mariadb
     
   handlers:
     - name: Restart mariadb
