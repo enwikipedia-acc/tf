@@ -23,6 +23,7 @@
       - python3-pymysql
       - mariadb-client
       - rrdtool
+      - npm
   tasks:
     - name: Make www filesystem
       community.general.filesystem:
