@@ -118,6 +118,8 @@
         name: wikidb
         state: present
         login_unix_socket: /var/run/mysqld/mysqld.sock
+      register: wikidb
+
     - name: MediaWiki git checkout
       ansible.builtin.git:
         repo: https://gerrit.wikimedia.org/r/mediawiki/core.git
@@ -179,6 +181,13 @@
     - name: Generate wgSecretKey
       shell: openssl rand -hex 32
       register: wgSecretKey
+
+    - name: Install MediaWiki
+      ansible.builtin.shell:
+        cmd: php maintenance/run.php install --dbname=wikidb --dbpass=wikiuser --server="{{urlScheme}}://{{wgServer}}" --scriptpath=/w --lang=en --pass=Adminpassword
+        chdir: /var/www/www/w
+      when: wikidb.changed
+
     - name: Local settings
       ansible.builtin.copy:
         content: |
@@ -256,7 +265,7 @@
 
     - name: Update MediaWiki
       ansible.builtin.shell: 
-        cmd: php maintenance/update.php --quick
+        cmd: php maintenance/run.php update --quick
         chdir: /var/www/www/w
 
     - name: Update Main Page
